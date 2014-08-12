@@ -96,7 +96,7 @@ angular.module('jlareau.pnotify', [])
                                 .then(function(response) {
                                     hash.text = response.data;
                                     var pnotify = new PNotify(hash);
-                                    $compile(pnotify.get())($scope);
+                                    $compile(pnotify.get())(hash.scope || {});
                                     return pnotify;
                                 });
                     }
