@@ -43,7 +43,7 @@ angular.module('jlareau.pnotify', [])
             defaultStack = name;
         };
 
-        this.$get = [ function() {
+        this.$get = ['$templateCache', '$scope', '$q', function($templateCache, $scope) {
 
             return {
 
@@ -90,7 +90,18 @@ angular.module('jlareau.pnotify', [])
                 },
 
                 notify: function(hash) {
-                    return new PNotify(hash);
+                    if(hash.templateUrl) {
+                        return
+                            $http.get(url, { cache: $templateCache })
+                                .then(function(response) {
+                                    hash.text = response.data;
+                                    var pnotify = new PNotify(hash);
+                                    $compile(pnotify.get())($scope);
+                                    return pnotify;
+                                });
+                    }
+                    else
+                        return $q.when(new PNotify(hash));
                 }
 
             };
