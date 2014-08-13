@@ -9,7 +9,7 @@ angular.module('jlareau.pnotify', [])
         var stacks = {};
         var defaultStack = false;
 
-        var initHash = function(stackName) {
+        var initHash = function(stackName, nsettings) {
             var hash = angular.copy(settings);
 
             if ((stackName || (stackName = defaultStack)) && stackName in stacks) {
@@ -58,7 +58,12 @@ angular.module('jlareau.pnotify', [])
                 notice: function(content, stack) {
                     var hash = initHash(stack);
                     hash.type = 'notice';
-                    hash.text = content;
+                    if(angular.isObject(content)) {
+                        angular.copy(content, hash);
+                    }
+                    else {
+                        hash.text = content;
+                    }
                     return this.notify(hash);
                 },
 
@@ -92,7 +97,7 @@ angular.module('jlareau.pnotify', [])
                 notify: function(hash) {
                     if(hash.templateUrl) {
                         return
-                            $http.get(url, { cache: $templateCache })
+                            $http.get(hash.templateUrl, { cache: $templateCache })
                                 .then(function(response) {
                                     hash.text = response.data;
                                     var pnotify = new PNotify(hash);
