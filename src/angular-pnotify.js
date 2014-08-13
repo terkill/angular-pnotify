@@ -9,7 +9,7 @@ angular.module('jlareau.pnotify', [])
         var stacks = {};
         var defaultStack = false;
 
-        var initHash = function(stackName, nsettings) {
+        var initHash = function(stackName) {
             var hash = angular.copy(settings);
 
             if ((stackName || (stackName = defaultStack)) && stackName in stacks) {
@@ -17,6 +17,9 @@ angular.module('jlareau.pnotify', [])
 
                 if (stacks[stackName].addclass) {
                     hash.addclass = 'addclass' in hash ? hash.addclass + ' ' + stacks[stackName].addclass : stacks[stackName].addclass;
+                }
+                if (hash.stack.icon) {
+                    hash.icon = hash.stack.icon;
                 }
             }
 
@@ -43,7 +46,7 @@ angular.module('jlareau.pnotify', [])
             defaultStack = name;
         };
 
-        this.$get = ['$templateCache', '$scope', '$q', function($templateCache, $scope) {
+        this.$get = ['$templateCache', '$http', '$q', '$compile', '$rootScope', function($templateCache, $http, $q, $compile, $rootScope) {
 
             return {
 
@@ -59,7 +62,9 @@ angular.module('jlareau.pnotify', [])
                     var hash = initHash(stack);
                     hash.type = 'notice';
                     if(angular.isObject(content)) {
-                        angular.copy(content, hash);
+                        for(var key in content) {
+                            hash[key] = content[key];
+                        }
                     }
                     else {
                         hash.text = content;
@@ -95,15 +100,20 @@ angular.module('jlareau.pnotify', [])
                 },
 
                 notify: function(hash) {
-                    if(hash.templateUrl) {
-                        return
-                            $http.get(hash.templateUrl, { cache: $templateCache })
+                    if(hash.stack.templateUrl) {
+                        var p =
+                            $http.get(hash.stack.templateUrl, { cache: $templateCache })
                                 .then(function(response) {
-                                    hash.text = response.data;
+                                    hash.text = response.data.replace(/\r\n|\r|\n/gm, '');
                                     var pnotify = new PNotify(hash);
-                                    $compile(pnotify.get())(hash.scope || {});
+                                    var scope = $rootScope.$new(true);
+                                    for(var key in hash.data) {
+                                        scope[key] = hash.data[key];
+                                    }
+                                    $compile(pnotify.get()[0])(scope || {});
                                     return pnotify;
                                 });
+                        return p;
                     }
                     else
                         return $q.when(new PNotify(hash));
